@@ -30,3 +30,8 @@
   ├── 09_short_seller.md            # 공매도/회의론자 (Hindenburg 스타일)
   └── 10_geopolitical_regulatory.md # 지정학/규제 전문가
 ```
+
+에이전트 평판분석 퇴출 신규 개선 머지
+기술 부분 보강
+마스터 판단 검증 강화
+마스터 페르소나 의회 토른
