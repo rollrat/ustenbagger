@@ -16,3 +16,17 @@
 
   9. Short Seller / 회의론자 - 재무 부정, 과대 홍보, 경쟁 위협, 실적 미스 가능성 집중 분석. "이 회사가 망할 수 있는 시나리오는?"
   10. 규제/지정학 전문가 - 미중 반도체 전쟁, 수출 규제, 관세, ESG 규제. "정책 한 방에 사업 모델이 흔들릴 종목은?"
+
+```
+  agents/
+  ├── 01_growth_equity_pm.md        # 성장주 포트폴리오 매니저 (Tiger Global 스타일)
+  ├── 02_deep_value_contrarian.md   # 역발상 투자자 (Seth Klarman 스타일)
+  ├── 03_early_stage_vc.md          # 초기 VC (a16z/Sequoia 스타일)
+  ├── 04_macro_strategist.md        # 매크로 전략가 (Bridgewater 스타일)
+  ├── 05_semiconductor_engineer.md  # 반도체 엔지니어 (TSMC/Intel 출신)
+  ├── 06_datacenter_operator.md     # 데이터센터 운영자 (AWS/Google 출신)
+  ├── 07_energy_analyst.md          # 에너지/전력 애널리스트
+  ├── 08_supply_chain_expert.md     # 공급망/소재 전문가
+  ├── 09_short_seller.md            # 공매도/회의론자 (Hindenburg 스타일)
+  └── 10_geopolitical_regulatory.md # 지정학/규제 전문가
+```
