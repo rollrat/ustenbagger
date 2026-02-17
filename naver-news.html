@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ECON_BRIEFING // 2026.02.17</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+/* ═══ RESET + VARS ═══ */
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0a0a0f;--surface:#0f0f18;--surface2:#141420;
+  --line:#1a1a28;--line-hi:#2a2a40;
+  --dim:#4a4a65;--text:#7a7a95;--bright:#b0b0c8;--white:#dddde8;
+  --green:#00ff88;--green-lo:rgba(0,255,136,.08);--green-mid:rgba(0,255,136,.18);
+  --red:#ff4466;--cell:3px;
+}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'Noto Sans KR','Space Mono',monospace;
+  background:var(--bg);color:var(--text);
+  line-height:1.75;cursor:none;overflow-x:hidden;
+}
+::selection{background:var(--green-mid);color:var(--white);}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--line-hi);border-radius:0;}
+
+/* ═══ BACKGROUND LAYERS ═══ */
+#gol{position:fixed;inset:0;z-index:0;opacity:.12;pointer-events:none;}
+.grid-bg{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:
+    repeating-linear-gradient(90deg,var(--line) 0 1px,transparent 1px 80px),
+    repeating-linear-gradient(0deg,var(--line) 0 1px,transparent 1px 80px);
+}
+.scanlines{
+  position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,.04) 2px 4px);
+}
+.noise{
+  position:fixed;inset:0;z-index:3;pointer-events:none;opacity:.03;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ═══ CUSTOM CURSOR ═══ */
+.cursor{
+  position:fixed;z-index:9999;pointer-events:none;
+  width:28px;height:28px;
+  transform:translate(-50%,-50%);
+  transition:width .15s,height .15s,opacity .15s;
+}
+.cursor::before,.cursor::after{
+  content:'';position:absolute;background:var(--green);
+}
+.cursor::before{width:1px;height:100%;left:50%;top:0;transform:translateX(-50%);}
+.cursor::after{width:100%;height:1px;top:50%;left:0;transform:translateY(-50%);}
+.cursor .ring{
+  position:absolute;inset:4px;border:1px solid var(--green);border-radius:50%;
+  opacity:.5;transition:inset .15s,opacity .15s;
+}
+body.hovering .cursor{width:44px;height:44px;}
+body.hovering .cursor .ring{inset:0;opacity:1;}
+
+/* ═══ MAIN CONTENT ═══ */
+main{position:relative;z-index:5;}
+
+/* ═══ TOPBAR ═══ */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;gap:16px;
+  padding:10px 32px;
+  background:rgba(10,10,15,.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+  font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);
+}
+.topbar .logo{color:var(--green);font-weight:700;letter-spacing:1px;}
+.topbar .sep{color:var(--line-hi);}
+.topbar .status{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.topbar .dot{
+  width:5px;height:5px;border-radius:50%;background:var(--green);
+  animation:blink-dot 2s ease-in-out infinite;
+}
+@keyframes blink-dot{0%,100%{opacity:1;}50%{opacity:.2;}}
+
+/* ═══ HERO ═══ */
+.hero{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:80vh;padding:80px 32px 60px;text-align:center;
+  position:relative;
+}
+.hero-cmd{
+  font-family:'Space Mono',monospace;font-size:13px;color:var(--dim);
+  margin-bottom:32px;letter-spacing:.5px;
+}
+.hero-cmd .blink{animation:blink-cursor .8s step-end infinite;}
+@keyframes blink-cursor{0%,100%{opacity:1;}50%{opacity:0;}}
+.hero h1{
+  font-family:'Silkscreen',monospace;
+  font-size:clamp(28px,5vw,56px);
+  color:var(--white);letter-spacing:3px;
+  text-transform:uppercase;line-height:1.2;margin-bottom:16px;
+  text-shadow:0 0 40px rgba(0,255,136,.15),0 0 80px rgba(0,255,136,.05);
+}
+.hero-meta{
+  font-family:'Space Mono',monospace;font-size:12px;color:var(--dim);
+  display:flex;flex-wrap:wrap;justify-content:center;gap:8px 20px;
+}
+.hero-meta .val{color:var(--green);}
+.globe-wrap{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;opacity:.12;z-index:-1;
+}
+.globe-wrap svg{
+  width:min(500px,80vw);height:min(500px,80vw);
+  animation:globe-spin 30s linear infinite;
+}
+@keyframes globe-spin{to{transform:rotateY(360deg);}}
+.globe-wrap svg *{fill:none;stroke:var(--green);vector-effect:non-scaling-stroke;}
+
+/* ═══ STATS STRIP ═══ */
+.stats{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+}
+.stat{
+  padding:24px 28px;border-right:1px solid var(--line);
+  transition:background .2s;
+}
+.stat:last-child{border-right:none;}
+.stat:hover{background:var(--green-lo);}
+.stat-label{
+  font-family:'Space Mono',monospace;font-size:10px;
+  color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;
+}
+.stat-val{
+  font-family:'Silkscreen',monospace;font-size:clamp(20px,3vw,32px);
+  color:var(--white);margin-bottom:4px;
+}
+.stat-val.up{color:var(--green);}
+.stat-val.dn{color:var(--red);}
+.stat-delta{font-family:'Space Mono',monospace;font-size:11px;}
+.stat-delta.up{color:var(--green);}
+.stat-delta.dn{color:var(--red);}
+
+/* ═══ SECTIONS ═══ */
+.sec{padding:64px 32px;border-bottom:1px solid var(--line);}
+.sec-head{
+  display:flex;align-items:baseline;gap:16px;margin-bottom:40px;
+  flex-wrap:wrap;
+}
+.sec-num{
+  font-family:'Silkscreen',monospace;font-size:12px;
+  color:var(--green);letter-spacing:2px;
+}
+.sec-title{
+  font-family:'Space Mono',monospace;font-size:13px;
+  color:var(--bright);letter-spacing:1px;text-transform:uppercase;
+}
+.sec-tag{
+  margin-left:auto;font-family:'Space Mono',monospace;font-size:10px;
+  padding:3px 10px;border:1px solid var(--green);color:var(--green);
+  letter-spacing:1px;
+}
+
+/* ═══ OVERVIEW ═══ */
+.overview-panel{
+  border:1px solid var(--line);padding:32px;position:relative;
+  transition:border-color .3s;
+}
+.overview-panel:hover{border-color:var(--line-hi);}
+.overview-panel::before{
+  content:'';position:absolute;top:0;left:0;width:3px;height:100%;
+  background:var(--green);opacity:.6;
+}
+.overview-panel p{
+  font-size:15px;line-height:2;color:var(--text);max-width:900px;
+}
+.overview-panel strong{color:var(--green);font-weight:500;}
+.overview-panel em{color:var(--bright);font-style:normal;font-weight:500;}
+
+/* ═══ PANEL GRID ═══ */
+.panel-grid{display:grid;gap:0;}
+.panel-grid.cols-3{grid-template-columns:repeat(3,1fr);}
+.panel-grid.cols-2{grid-template-columns:repeat(2,1fr);}
+.panel-grid.cols-4{grid-template-columns:repeat(2,1fr);}
+
+.panel{
+  border:1px solid var(--line);padding:28px;
+  position:relative;transition:all .25s;
+  display:flex;flex-direction:column;
+}
+.panel:hover{
+  background:var(--green-lo);border-color:var(--line-hi);
+  box-shadow:inset 0 0 30px rgba(0,255,136,.02);
+}
+.panel-label{
+  font-family:'Space Mono',monospace;font-size:10px;
+  color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;
+  margin-bottom:16px;display:flex;align-items:center;gap:8px;
+}
+.panel-label .dot-sm{
+  width:4px;height:4px;background:var(--green);display:inline-block;
+}
+.panel h3{
+  font-size:15px;font-weight:500;color:var(--white);
+  margin-bottom:10px;line-height:1.5;letter-spacing:-.3px;
+}
+.panel p{font-size:13px;color:var(--text);line-height:1.8;flex-grow:1;}
+.panel .hl{color:var(--green);font-weight:500;}
+.panel .wh{color:var(--bright);font-weight:500;}
+
+/* Panel wireframe graphic */
+.panel-gfx{
+  width:100%;height:80px;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:center;
+  opacity:.25;transition:opacity .3s;
+}
+.panel:hover .panel-gfx{opacity:.45;}
+.panel-gfx svg{height:60px;width:auto;}
+.panel-gfx svg *{fill:none;stroke:var(--green);stroke-width:.7;vector-effect:non-scaling-stroke;}
+
+/* Panel pixel decoration */
+.panel::after{
+  content:'';position:absolute;bottom:6px;right:6px;
+  width:12px;height:8px;opacity:.15;
+  background:repeating-linear-gradient(90deg,var(--green) 0 2px,transparent 2px 4px);
+}
+
+/* ═══ MARKET PANELS (list style) ═══ */
+.mkt-panel{
+  border:1px solid var(--line);padding:28px;
+  transition:all .25s;
+}
+.mkt-panel:hover{background:var(--green-lo);border-color:var(--line-hi);}
+.mkt-panel h3{
+  font-family:'Space Mono',monospace;font-size:11px;
+  color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;
+  margin-bottom:20px;display:flex;align-items:center;gap:8px;
+}
+.mkt-panel h3 .ico{color:var(--green);font-size:14px;}
+.mkt-panel ul{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.mkt-panel li{
+  font-size:13px;color:var(--text);line-height:1.7;
+  display:flex;align-items:flex-start;gap:10px;
+}
+.mkt-panel li::before{
+  content:'›';color:var(--green);font-family:'Space Mono',monospace;
+  font-weight:700;flex-shrink:0;margin-top:-1px;
+}
+.mkt-panel li strong{color:var(--bright);font-weight:500;}
+
+/* ═══ INSIGHT CARDS ═══ */
+.insights-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0;}
+.insight{
+  border:1px solid var(--line);padding:28px;
+  position:relative;transition:all .25s;
+}
+.insight:hover{background:var(--green-lo);border-color:var(--line-hi);}
+.insight::before{
+  content:'';position:absolute;top:0;left:0;width:100%;height:1px;
+  background:linear-gradient(90deg,var(--green),transparent);
+  opacity:0;transition:opacity .3s;
+}
+.insight:hover::before{opacity:.6;}
+.insight-num{
+  font-family:'Silkscreen',monospace;font-size:28px;
+  color:rgba(0,255,136,.12);line-height:1;margin-bottom:12px;
+}
+.insight h3{
+  font-size:14px;font-weight:500;color:var(--white);
+  margin-bottom:8px;letter-spacing:-.2px;
+}
+.insight p{font-size:13px;color:var(--text);line-height:1.7;}
+
+/* ═══ FOOTER ═══ */
+footer{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 32px;border-top:1px solid var(--line);
+  font-family:'Space Mono',monospace;font-size:10px;color:var(--dim);
+  letter-spacing:.5px;flex-wrap:wrap;gap:8px;
+}
+footer .warn{color:var(--dim);opacity:.5;}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:900px){
+  .stats{grid-template-columns:repeat(2,1fr);}
+  .stat:nth-child(2){border-right:none;}
+  .panel-grid.cols-3,.panel-grid.cols-2,.panel-grid.cols-4{grid-template-columns:1fr;}
+  .insights-grid{grid-template-columns:1fr;}
+  .sec{padding:48px 20px;}
+  .topbar{padding:10px 16px;font-size:10px;gap:10px;}
+  .topbar .hide-m{display:none;}
+}
+@media(max-width:600px){
+  .stats{grid-template-columns:1fr;}
+  .stat{border-right:none;border-bottom:1px solid var(--line);}
+  .stat:last-child{border-bottom:none;}
+  .hero{min-height:60vh;padding:60px 20px 40px;}
+  .hero-meta{flex-direction:column;gap:4px;}
+  body{cursor:auto;}
+  .cursor{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ BG LAYERS ═══ -->
+<canvas id="gol"></canvas>
+<div class="grid-bg"></div>
+<div class="scanlines"></div>
+<div class="noise"></div>
+<div class="cursor"><div class="ring"></div></div>
+
+<main>
+
+<!-- ═══ TOPBAR ═══ -->
+<nav class="topbar">
+  <span class="logo">ECON_BRIEFING</span>
+  <span class="sep hide-m">//</span>
+  <span class="hide-m">v2.0</span>
+  <span class="sep hide-m">|</span>
+  <span class="hide-m">SYS.DATE: 2026.02.17</span>
+  <span class="status"><span class="dot"></span> ONLINE</span>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <div class="globe-wrap">
+    <svg viewBox="0 0 300 300" style="transform-style:preserve-3d;perspective:800px;">
+      <circle cx="150" cy="150" r="120" stroke-width=".6"/>
+      <ellipse cx="150" cy="150" rx="120" ry="30" stroke-width=".3"/>
+      <ellipse cx="150" cy="150" rx="120" ry="60" stroke-width=".3"/>
+      <ellipse cx="150" cy="150" rx="120" ry="90" stroke-width=".3"/>
+      <ellipse cx="150" cy="150" rx="30" ry="120" stroke-width=".3"/>
+      <ellipse cx="150" cy="150" rx="60" ry="120" stroke-width=".3"/>
+      <ellipse cx="150" cy="150" rx="90" ry="120" stroke-width=".3"/>
+      <line x1="30" y1="150" x2="270" y2="150" stroke-width=".2"/>
+      <line x1="150" y1="30" x2="150" y2="270" stroke-width=".2"/>
+    </svg>
+  </div>
+  <div class="hero-cmd">> executing market_analysis.py<span class="blink">_</span></div>
+  <h1>경제 뉴스<br>브리핑</h1>
+  <div class="hero-meta">
+    <span>date: <span class="val">2026-02-17</span></span>
+    <span>|</span>
+    <span>type: <span class="val">설날 특집</span></span>
+    <span>|</span>
+    <span>articles_analyzed: <span class="val">1,600</span></span>
+  </div>
+</section>
+
+<!-- ═══ STATS ═══ -->
+<section class="stats">
+  <div class="stat">
+    <div class="stat-label">kospi.index</div>
+    <div class="stat-val up">5,500+</div>
+    <div class="stat-delta up">▲ 사상 최초 5천 돌파</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">usd/krw.fx</div>
+    <div class="stat-val dn">1,440</div>
+    <div class="stat-delta dn">▼ 하락 전환 (변곡점)</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">mortgage.rate</div>
+    <div class="stat-val up">6.74%</div>
+    <div class="stat-delta up">▲ 7% 초읽기</div>
+  </div>
+  <div class="stat">
+    <div class="stat-label">gdp.q4_growth</div>
+    <div class="stat-val dn">-0.28%</div>
+    <div class="stat-delta dn">▼ 24국 중 22위</div>
+  </div>
+</section>
+
+<!-- ═══ 01 // MARKET OVERVIEW ═══ -->
+<section class="sec">
+  <div class="sec-head">
+    <span class="sec-num">01</span>
+    <span class="sec-title">// market_overview</span>
+  </div>
+  <div class="overview-panel">
+    <p>
+      설 연휴에도 경제 뉴스가 활발하다. <strong>한국 2025년 4분기 GDP 성장률 -0.276%</strong>로 주요 24개국 중 22위(최하위권)에 머물렀다.
+      비상계엄 사태, 건설경기 부진, 기저효과가 복합적으로 작용했으며 연간 성장률도 <em>사실상 0%대(0.97%)</em>다.
+      한은은 2/26 수정 경제전망에서 미국 관세 리스크를 반영할 예정이다.
+      <br><br>
+      한편 <strong>코스피는 사상 최초 5,000선 돌파("오천피" 시대)</strong> 후 5,500선까지 진입하며 불장이 이어지고 있다.
+      상장사 66%의 목표주가가 상향 조정되었고, 현대차가 86% 상향으로 1위를 기록했다.
+      개인투자자 자금이 코스닥150 ETF에 <strong>약 5조원</strong> 유입되는 등 뜨거운 투자 열기가 이어지고 있다.
+    </p>
+  </div>
+</section>
+
+<!-- ═══ 02 // US MARKET ═══ -->
+<section class="sec">
+  <div class="sec-head">
+    <span class="sec-num">02</span>
+    <span class="sec-title">// us_market.scan()</span>
+    <span class="sec-tag">환율 변곡점</span>
+  </div>
+  <div class="panel-grid cols-3">
+    <div class="mkt-panel">
+      <h3><span class="ico">$</span> fx.exchange</h3>
+      <ul>
+        <li>원/달러 1,478원 → <strong>1,440원대 안착</strong></li>
+        <li>해외 IB들, 연말 <strong>1,400원 초반~1,300원대</strong> 전망</li>
+        <li>"환율 1,500원 공포 종료" 관측 확산</li>
+        <li>미 국채금리 4%대에도 약달러 흐름 지속</li>
+      </ul>
+    </div>
+    <div class="mkt-panel">
+      <h3><span class="ico">◆</span> stocks.major</h3>
+      <ul>
+        <li><strong>팔란티어</strong>: 한 달간 27% 폭락 후 1.74% 반등</li>
+        <li><strong>비트코인</strong>: CPI 호재로 $70K 회복 → 재하락, 개인 탈출</li>
+        <li><strong>미 EV 시장</strong>: 10년 내 첫 판매 감소. 현대차그룹 2위 유지</li>
+        <li><strong>글로벌 VC</strong>: 작년 $5,121억 달성, AI/ML 집중</li>
+      </ul>
+    </div>
+    <div class="mkt-panel">
+      <h3><span class="ico">⚡</span> ai.disruption</h3>
+      <ul>
+        <li>빅테크 중심 <strong>AI 대체 구조조정</strong> 가속화</li>
+        <li>중국 AI 영상 모델 '시댄스 2.0' 할리우드 충격</li>
+        <li>연준 의장 지명자 <strong>케빈 워시</strong> 배경 주목</li>
+        <li>중국 춘제 갈라쇼에 <strong>휴머노이드 로봇</strong> 등장</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 03 // KR MARKET ═══ -->
+<section class="sec">
+  <div class="sec-head">
+    <span class="sec-num">03</span>
+    <span class="sec-title">// kr_market.analyze()</span>
+    <span class="sec-tag">불장 지속</span>
+  </div>
+  <div class="panel-grid cols-2">
+    <div class="panel">
+      <div class="panel-gfx">
+        <svg viewBox="0 0 120 60"><polyline points="5,55 20,40 35,45 50,20 65,25 80,10 95,15 115,5" stroke-width=".8"/><line x1="5" y1="55" x2="115" y2="55" stroke-width=".3"/></svg>
+      </div>
+      <div class="panel-label"><span class="dot-sm"></span> index.kospi</div>
+      <h3>코스피 5,500선 돌파 — "오천피" 시대</h3>
+      <p>개인투자자 자금 활발 유입. 코스닥150 ETF에 <span class="hl">약 5조원</span> 집중. 상장사 66% 목표가 상향, 현대차 86%로 1위.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-gfx">
+        <svg viewBox="0 0 80 80"><circle cx="40" cy="40" r="35" stroke-width=".5"/><circle cx="40" cy="40" r="23" stroke-width=".4"/><circle cx="40" cy="40" r="11" stroke-width=".3"/><circle cx="55" cy="25" r="3" stroke-width=".6"/><circle cx="30" cy="50" r="2" stroke-width=".6"/><line x1="5" y1="40" x2="75" y2="40" stroke-width=".2"/><line x1="40" y1="5" x2="40" y2="75" stroke-width=".2"/></svg>
+      </div>
+      <div class="panel-label"><span class="dot-sm"></span> investor.flow</div>
+      <h3>고액자산가(10억+) 매수 종목</h3>
+      <p>국내: <span class="hl">삼성전자·하이닉스</span>(전체의 절반). 해외: <span class="hl">알파벳(구글)</span> 선호. 세뱃돈 투자 관심 급증.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-gfx">
+        <svg viewBox="0 0 100 60"><rect x="15" y="10" width="30" height="40" rx="2" stroke-width=".5"/><rect x="55" y="20" width="30" height="30" rx="2" stroke-width=".5"/><line x1="45" y1="30" x2="55" y2="35" stroke-width=".4"/><circle cx="30" cy="30" r="8" stroke-width=".3"/></svg>
+      </div>
+      <div class="panel-label"><span class="dot-sm"></span> equity.hyundai</div>
+      <h3>현대차 휴머노이드 '아틀라스' 주목</h3>
+      <p>외국인 5조 순매도 vs 개인 매수 대응. 연말 미국 <span class="hl">무인 로보택시</span> 유료 서비스 예정. 웨이모·테슬라 대비 우위 평가.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-gfx">
+        <svg viewBox="0 0 80 60"><rect x="10" y="5" width="60" height="40" stroke-width=".5"/><line x1="10" y1="15" x2="70" y2="15" stroke-width=".3"/><line x1="10" y1="25" x2="70" y2="25" stroke-width=".2"/><line x1="10" y1="35" x2="70" y2="35" stroke-width=".2"/><rect x="15" y="18" width="20" height="5" stroke-width=".4"/><rect x="15" y="28" width="30" height="5" stroke-width=".4"/></svg>
+      </div>
+      <div class="panel-label"><span class="dot-sm"></span> equity.samsung</div>
+      <h3>삼성전자 "세계 1위 탈환" 반전</h3>
+      <p>반도체 사이클 회복 기대. <span class="hl">HBM 이후 HBF(고대역폭플래시)</span> 차세대 메모리 기술 부상. 다이아몬드 전력반도체도 주목.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 04 // SECTOR SCAN ═══ -->
+<section class="sec">
+  <div class="sec-head">
+    <span class="sec-num">04</span>
+    <span class="sec-title">// sector.scan({ depth: "full" })</span>
+  </div>
+  <div class="panel-grid cols-3">
+
+    <!-- Finance -->
+    <div class="panel">
+      <div class="panel-label"><span class="dot-sm"></span> sector.finance</div>
+      <h3>주담대 금리 7% 초읽기</h3>
+      <p>5년 주기형 상단 6.74%. 영끌족 이자부담 급증. 5대 은행 작년 <span class="hl">94개 지점 폐쇄</span>, 사상 최대 실적에도 축소 지속.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-label"><span class="dot-sm"></span> sector.investment</div>
+      <h3>한은, 금 ETF 투자 공식 검토</h3>
+      <p>해외 상장 금 현물 ETF 매입 방안 테이블에. 퇴직연금 수익률은 최근 10년 연평균 <span class="hl">2%대</span>로 물가상승률 간신히 상회.</p>
+    </div>
+
+    <!-- Real Estate -->
+    <div class="panel">
+      <div class="panel-label"><span class="dot-sm"></span> sector.real_estate</div>
+      <h3>다주택자 양도세 중과 5/9 종료 확정</h3>
+      <p>이재명 대통령 vs 장동혁 야당 대표 <span class="hl">SNS 설전</span> 격화. 실거주 1주택 중심 핀셋 과세. 매수우위지수 올해 최저.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-label"><span class="dot-sm"></span> sector.construction</div>
+      <h3>서울 정비사업 77조원 — 대규모 수주전</h3>
+      <p>압구정·여의도·목동·성수 재건축 경쟁. <span class="hl">부동산감독원 11월 설립</span>. 소형(60m²)이 84m² 인기 첫 역전.</p>
+    </div>
+
+    <!-- Industry -->
+    <div class="panel">
+      <div class="panel-label"><span class="dot-sm"></span> sector.battery</div>
+      <h3>배터리 동맹 해체 — ESS·로봇 전환</h3>
+      <p>EV 캐즘 장기화로 합작법인 청산. 배터리 업계 <span class="hl">ESS·로봇으로 축 이동</span>. LG전자도 로봇 기업으로 진화 중.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-label"><span class="dot-sm"></span> sector.export</div>
+      <h3>K-뷰티·K-푸드 글로벌 고공행진</h3>
+      <p>K-뷰티 <span class="hl">북미·유럽 오프라인 진출</span> 본격화. K-푸드 수출 급성장, 15대 주력 품목 일부 추월.</p>
+    </div>
+
+    <!-- Tech -->
+    <div class="panel">
+      <div class="panel-label"><span class="dot-sm"></span> sector.ai</div>
+      <h3>카카오톡 AI 에이전트 도입</h3>
+      <p>2/21 업데이트, 대화 내 <span class="hl">원스톱 추천+예약</span>. 챗GPT 프로 90% 할인(2.9만원) 사흘 만에 물량 소진.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-label"><span class="dot-sm"></span> sector.semiconductor</div>
+      <h3>EUV 장비, 일본으로 속속</h3>
+      <p>대당 <span class="hl">3,000억원</span> 극자외선 노광장비 도입. 다이아몬드 소재 차세대 전력반도체 한국도 도전.</p>
+    </div>
+
+    <!-- Global -->
+    <div class="panel">
+      <div class="panel-label"><span class="dot-sm"></span> sector.global_trade</div>
+      <h3>EU 중국 전기차 견제 + 졸리비 K-F&B 인수</h3>
+      <p>EU: <span class="hl">역내 70%+ 생산 EV에만 보조금</span>. 필리핀 졸리비, 샤브올데이 1,200억 인수 + 컴포즈커피 필리핀 확정.</p>
+    </div>
+
+    <!-- Life -->
+    <div class="panel">
+      <div class="panel-label"><span class="dot-sm"></span> sector.domestic</div>
+      <h3>자영업자·소상공인 위기 심화</h3>
+      <p>연체율 급등, 임금체불 2년 새 16%↑. 소상공인 70% 자금난. 평균 빚 <span class="hl">1.15억원</span>. 차례상 비용 6년 새 2배.</p>
+    </div>
+
+    <!-- Crypto -->
+    <div class="panel">
+      <div class="panel-label"><span class="dot-sm"></span> sector.digital_asset</div>
+      <h3>코인 과세 인프라 혼란 우려</h3>
+      <p>윤석열 정부 시절 미완비 인프라 + 건보료 논란. 바이낸스 "규제=성장 기회". <span class="hl">그레이스케일</span> 크립토 ETF 낙관.</p>
+    </div>
+
+    <!-- Filler for grid alignment -->
+    <div class="panel" style="border-color:transparent;background:transparent;"></div>
+
+  </div>
+</section>
+
+<!-- ═══ 05 // SIGNALS ═══ -->
+<section class="sec">
+  <div class="sec-head">
+    <span class="sec-num">05</span>
+    <span class="sec-title">// export const signals = [</span>
+  </div>
+  <div class="insights-grid">
+    <div class="insight">
+      <div class="insight-num">01</div>
+      <h3>환율 변곡점</h3>
+      <p>1,500원 공포 → 1,440원 안착. 추가 하락 시 수입물가 완화 기대. 수출기업 마진 압박 가능성 병존.</p>
+    </div>
+    <div class="insight">
+      <div class="insight-num">02</div>
+      <h3>코스피 5,500 시대</h3>
+      <p>불장 지속이나 밸류에이션 부담 상승. 증권사 목표가 변별력 하락 경고. 고액자산가 삼전·하닉 집중 매수.</p>
+    </div>
+    <div class="insight">
+      <div class="insight-num">03</div>
+      <h3>부동산 정책 변동</h3>
+      <p>5월 양도세 중과 부활 → 다주택자 매물 출회 예상. 실거주 1주택 중심 핀셋 과세 방향.</p>
+    </div>
+    <div class="insight">
+      <div class="insight-num">04</div>
+      <h3>금리 상승 리스크</h3>
+      <p>주담대 7% 진입 시 실수요자·영끌족 부담 가중. 은행 점포 축소로 금융 접근성 악화.</p>
+    </div>
+    <div class="insight">
+      <div class="insight-num">05</div>
+      <h3>EV 캐즘 → ESS 전환</h3>
+      <p>배터리 업계 ESS·로봇으로 전환 가속. EU 규제로 글로벌 EV 공급망 재편 진행.</p>
+    </div>
+    <div class="insight">
+      <div class="insight-num">06</div>
+      <h3>AI 수혜주 주목</h3>
+      <p>삼성·하이닉스(HBM/HBF), 현대차(로보택시), LG(로봇)가 핵심 수혜주. AI 구조조정 리스크 병존.</p>
+    </div>
+    <div class="insight">
+      <div class="insight-num">07</div>
+      <h3>내수 위기 지속</h3>
+      <p>자영업자 연체율 급증, 소상공인 70% 자금난. 정부 금융지원 확대 여부가 핵심 변수.</p>
+    </div>
+  </div>
+  <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--dim);padding:20px 0 0 4px;letter-spacing:1px;">]; // end signals</div>
+</section>
+
+</main>
+
+<!-- ═══ FOOTER ═══ -->
+<footer>
+  <span>ECON_BRIEFING // 2026.02.17 // 1,600 articles analyzed</span>
+  <span class="warn">// 투자 판단의 책임은 본인에게 있습니다</span>
+</footer>
+
+<!-- ═══ JS ═══ -->
+<script>
+// ── Custom Cursor ──
+const cur = document.querySelector('.cursor');
+document.addEventListener('mousemove', e => {
+  cur.style.left = e.clientX + 'px';
+  cur.style.top = e.clientY + 'px';
+});
+document.querySelectorAll('.panel,.mkt-panel,.stat,.insight,.sec-tag,.topbar a').forEach(el => {
+  el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+  el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+});
+
+// ── Conway's Game of Life ──
+const canvas = document.getElementById('gol');
+const ctx = canvas.getContext('2d');
+const CELL = 6;
+let cols, rows, grid;
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  cols = Math.floor(canvas.width / CELL);
+  rows = Math.floor(canvas.height / CELL);
+  grid = Array.from({ length: rows }, () =>
+    Array.from({ length: cols }, () => Math.random() < .08 ? 1 : 0)
+  );
+}
+resize();
+window.addEventListener('resize', resize);
+
+function step() {
+  const next = grid.map(r => [...r]);
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      let n = 0;
+      for (let dy = -1; dy <= 1; dy++)
+        for (let dx = -1; dx <= 1; dx++) {
+          if (!dy && !dx) continue;
+          const ny = (y + dy + rows) % rows;
+          const nx = (x + dx + cols) % cols;
+          n += grid[ny][nx];
+        }
+      if (grid[y][x]) next[y][x] = n === 2 || n === 3 ? 1 : 0;
+      else next[y][x] = n === 3 ? 1 : 0;
+    }
+  }
+  grid = next;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = 'rgba(0,255,136,.6)';
+  for (let y = 0; y < rows; y++)
+    for (let x = 0; x < cols; x++)
+      if (grid[y][x]) ctx.fillRect(x * CELL, y * CELL, CELL - 1, CELL - 1);
+}
+
+function tick() { step(); draw(); }
+setInterval(tick, 350);
+draw();
+</script>
+</body>
+</html>
